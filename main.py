@@ -15,7 +15,8 @@ def get_all_links(url_file): # тут подтягиваем ссылки для
     with open(url_file) as file:
         links = [row.strip() for row in file]
 
-    # print(links)
+    print(links)
+    print(f'Количество ссылок для парсинга: {len(links)}')
     # print(type(links))
 
     # soup = BeautifulSoup(html, 'html.parser')

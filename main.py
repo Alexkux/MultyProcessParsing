@@ -84,7 +84,7 @@ def get_page_data(html):
 
 
 def write_csv(data):
-    with open('out_file.csv', 'a') as f:
+    with open('out_file.csv','a', newline='') as f:
         writer = csv.writer(f)
         writer.writerow((data['category'],
                          data['sku'],
@@ -115,7 +115,7 @@ def main():
     #     write_csv(data)
     #     print(index)
 
-    with Pool(20) as p:
+    with Pool(10) as p:
         p.map(make_all, all_links)
 
    # get_page_data('https://tachka.ru/avtobox?page=1')

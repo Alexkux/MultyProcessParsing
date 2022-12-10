@@ -46,8 +46,13 @@ def get_page_data(html):
             name = product.find('h3', class_='catalog-item__head').text.strip()
         except:
             name = ''
-        k = name.rfind('Артикул ')  # переменная для вычисления позиции подстроки
-        sku = name[k + 8:]  # значение артикула вырезаем из наименования
+
+        try:
+            k = name.rfind('Артикул ')  # переменная для вычисления позиции подстроки
+            sku = name[k + 8:]  # значение артикула вырезаем из наименования
+        except:
+            sku = ''
+
         try:
             price = product.find("div", {"class": "catalog-item__price"}).text.strip().replace("₽",
                                                                                                "")  # получаем значение цены и обрезаем лишние символы
@@ -78,14 +83,19 @@ def get_page_data(html):
                 'quantity': quantity,
                 'manufacturer': manufacturer}
         #parsed =
-        write_csv(data)
+
+        try:
+            write_csv(data)
+        except Exception:
+            continue
+
     # print(data)
     return data
 
 
 def write_csv(data):
-    with open('out_file.csv', 'a', newline='') as f:
-        writer = csv.writer(f)
+    with open('out_file.csv', 'a', newline='', encoding='utf-8') as f:
+        writer = csv.writer(f, delimiter='\t')
         writer.writerow((data['category'],
                          data['sku'],
                          data['name'],
@@ -96,9 +106,10 @@ def write_csv(data):
 
 
 def make_all(url):
+    print(url)
     html = get_html(url)
     data = get_page_data(html)
-    print(url)
+
 
 #  write_csv(data)
 
@@ -116,7 +127,7 @@ def main():
     #     write_csv(data)
     #     print(index)
 
-    with Pool(10) as p: #Pool(10) - количество выполняемых процессов
+    with Pool(50) as p: #Pool(10) - количество выполняемых процессов
         p.map(make_all, all_links)
 
 

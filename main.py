@@ -5,6 +5,7 @@ from datetime import datetime
 from multiprocessing import Pool
 import re
 
+
 def get_html(url):
     r = requests.get(url)  # Response
     return r.text  # возвращает html код страницы
@@ -30,64 +31,94 @@ def get_all_links(url_file):  # тут подтягиваем ссылки дл�
 
 
 def get_page_data(html):
-    soup = BeautifulSoup(html, 'html.parser')
+    try:
+        soup = BeautifulSoup(html, 'html.parser')
+    except Exception:
+        data = {'category': '',
+                'sku': '',
+                'name': '',
+                'price': '',
+                'quantity': '',
+                'manufacturer': ''}
+        return data
+
     products = soup.find_all("div", {"class": "catalog-item"})  # Получаем массив экземпляров карточки товара
+
     # page += 1
     # print(len(products), 'стр:', 'ссылка:', url)
-    for product in products:  # Открываем каждую карточку для парсинга
-        try:
-            category = soup.find_all("span", {"itemprop": "name"})
-            category = str(category)
-            category = re.sub("[^А-я, " "]", "", category)
-        except:
-            category = ''
+    if len(products) > 0:
 
-        try:
-            name = product.find('h3', class_='catalog-item__head').text.strip()
-        except:
-            name = ''
+        for product in products:  # Открываем каждую карточку для парсинга
+            try:
+                category = soup.find_all("span", {"itemprop": "name"})
+                category = str(category)
+                category = re.sub("[^А-я, " "]", "", category)
+            except:
+                category = ''
 
-        try:
-            k = name.rfind('Артикул ')  # переменная для вычисления позиции подстроки
-            sku = name[k + 8:]  # значение артикула вырезаем из наименования
-        except:
-            sku = ''
+            try:
+                name = product.find('h3', class_='catalog-item__head').text.strip()
+            except:
+                name = ''
 
-        try:
-            price = product.find("div", {"class": "catalog-item__price"}).text.strip().replace("₽",
-                                                                                               "")  # получаем значение цены и обрезаем лишние символы
-        except:
-            price = ''
+            try:
+                k = name.rfind('Артикул ')  # переменная для вычисления позиции подстроки
+                sku = name[k + 8:]  # значение артикула вырезаем из наименования
+            except:
+                sku = ''
 
-        try:
-            quantity = product.find("span", {"class": "catalog-item__quantity-count"})  # получаем значение остатка продукта
-            # quantity = soup.find("span", class_='catalog-item__quantity-count').text.strip()
-            quantity = str(quantity)  # переопределяем тип значения остатка
-            quantity = re.sub("[^0-9]", "", quantity)  # удаление всех символов из строки, кроме цыфр
-        except:
-             quantity = 0 # если в количество ничего не записано, присваеваем ему значение 0
+            try:
+                price = product.find("div", {"class": "catalog-item__price"}).text.strip().replace("₽",
+                                                                                                   "")  # получаем значение цены и обрезаем лишние символы
+            except:
+                price = ''
 
-        try:
-            specific = product.find("div", {"class": "catalog-item__attributes attributes"}).text.strip()
-            specific = str(specific)
-            specific = re.sub('\n|\s', '', specific)
-            m = specific.rfind('ль:')
-            manufacturer = specific[m + 3:]
-        except:
-            manufacturer = ''
+            try:
+                quantity = product.find("span",
+                                        {"class": "catalog-item__quantity-count"})  # получаем значение остатка продукта
+                # quantity = soup.find("span", class_='catalog-item__quantity-count').text.strip()
+                quantity = str(quantity)  # переопределяем тип значения остатка
+                quantity = re.sub("[^0-9]", "", quantity)  # удаление всех символов из строки, кроме цыфр
+            except:
+                quantity = 0  # если в количество ничего не записано, присваеваем ему значение 0
 
-        data = {'category': category,
-                'sku': sku,
-                'name': name,
-                'price': price,
-                'quantity': quantity,
-                'manufacturer': manufacturer}
-        #parsed =
+            try:
+                specific = product.find("div", {"class": "catalog-item__attributes attributes"}).text.strip()
+                specific = str(specific)
+                specific = re.sub('\n|\s', '', specific)
+                m = specific.rfind('ль:')
+                manufacturer = specific[m + 3:]
+            except:
+                manufacturer = ''
 
-        try:
-            write_csv(data)
-        except Exception:
-            continue
+            try:
+                data = {'category': category,
+                        'sku': sku,
+                        'name': name,
+                        'price': price,
+                        'quantity': quantity,
+                        'manufacturer': manufacturer}
+            except Exception:
+                continue
+                # data = {'category': '',
+                #         'sku': '',
+                #         'name': '',
+                #         'price': '',
+                #         'quantity': '',
+                #         'manufacturer': ''}
+            # parsed =
+
+            try:
+                write_csv(data)
+            except Exception:
+                continue
+    else:
+        data = {'category': '',
+                'sku': '',
+                'name': '',
+                'price': '',
+                'quantity': '',
+                'manufacturer': ''}
 
     # print(data)
     return data
@@ -127,10 +158,8 @@ def main():
     #     write_csv(data)
     #     print(index)
 
-    with Pool(50) as p: #Pool(10) - количество выполняемых процессов
+    with Pool(30) as p:  # Pool(10) - количество выполняемых процессов
         p.map(make_all, all_links)
-
-
 
     end = datetime.now()
     total = end - start

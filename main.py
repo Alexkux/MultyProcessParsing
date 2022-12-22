@@ -8,7 +8,6 @@ from time import sleep
 from random import uniform
 
 
-
 def get_html(url):
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0',
@@ -58,7 +57,9 @@ def get_page_data(html):
                 'name': '',
                 'price': '',
                 'quantity': '',
-                'manufacturer': ''}
+                'manufacturer': '',
+                'tech': ''
+                }
         return data
 
     products = soup.find_all("div", {"class": "catalog-item"})  # Получаем массив экземпляров карточки товара
@@ -111,12 +112,22 @@ def get_page_data(html):
                 manufacturer = ''
 
             try:
+                tech = product.find("div", {"class": "tech"}).text.strip()
+                # tech = re.sub('\n|\s', '', tech)
+                tech = tech.replace('\n\n\n', '; ')
+                tech = tech.replace('\n', ' - ')
+            except:
+                tech = ''
+
+            try:
                 data = {'category': category,
                         'sku': sku,
                         'name': name,
                         'price': price,
                         'quantity': quantity,
-                        'manufacturer': manufacturer}
+                        'manufacturer': manufacturer,
+                        'tech': tech
+                        }
             except Exception:
                 continue
                 # data = {'category': '',
@@ -137,7 +148,9 @@ def get_page_data(html):
                 'name': '',
                 'price': '',
                 'quantity': '',
-                'manufacturer': ''}
+                'manufacturer': '',
+                'tech': ''
+                }
 
     # print(data)
     return data
@@ -151,7 +164,8 @@ def write_csv(data):
                          data['name'],
                          data['price'],
                          data['quantity'],
-                         data['manufacturer']))
+                         data['manufacturer'],
+                         data['tech']))
         print(data['name'], 'parsed')
 
 

@@ -4,10 +4,29 @@ import csv
 from datetime import datetime
 from multiprocessing import Pool
 import re
+from time import sleep
+from random import uniform
+
 
 
 def get_html(url):
-    r = requests.get(url)  # Response
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+        'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
+        # 'Accept-Encoding': 'gzip, deflate, br',
+        'Connection': 'keep-alive',
+        'Upgrade-Insecure-Requests': '1',
+        'Sec-Fetch-Dest': 'document',
+        'Sec-Fetch-Mode': 'navigate',
+        'Sec-Fetch-Site': 'cross-site',
+        'If-Modified-Since': 'Tue, 20 Dec 2022 03:36:18 GMT',
+        'If-None-Match': 'W/63a12db2-3879',
+    }
+
+    r = requests.get(url, headers=headers)  # Response
+    sleep(uniform(3, 6))
+
     return r.text  # возвращает html код страницы
 
 
@@ -158,7 +177,7 @@ def main():
     #     write_csv(data)
     #     print(index)
 
-    with Pool(30) as p:  # Pool(10) - количество выполняемых процессов
+    with Pool(1) as p:  # Pool(10) - количество выполняемых процессов
         p.map(make_all, all_links)
 
     end = datetime.now()

@@ -10,21 +10,24 @@ from random import uniform
 
 def get_html(url):
     headers = {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:108.0) Gecko/20100101 Firefox/108.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-        'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-        # 'Accept-Encoding': 'gzip, deflate, br',
-        'Connection': 'keep-alive',
-        'Upgrade-Insecure-Requests': '1',
-        'Sec-Fetch-Dest': 'document',
-        'Sec-Fetch-Mode': 'navigate',
-        'Sec-Fetch-Site': 'cross-site',
-        'If-Modified-Since': 'Tue, 20 Dec 2022 03:36:18 GMT',
-        'If-None-Match': 'W/63a12db2-3879',
+        'authority': 'tachka.ru',
+        'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.9',
+        'accept-language': 'ru,en;q=0.9',
+        # 'cookie': '_ym_uid=1669358802662288893; _ym_d=1669358802; supportOnlineTalkID=iAHZHLG5D2SuB5bcyZ4ia1UMonBvEekk; _jsuid=4208243538; mmg=0; language=ru; _gid=GA1.2.1232516251.1672027706; _ym_isad=2; PHPSESSID=010a8fab558550093ca6c5a256234294; _ga_JNNER3BHS4=GS1.1.1672055466.7.0.1672055466.60.0.0; _ga=GA1.2.1543746765.1669358802; _gat=1; _heatmaps_g2g_100846186=no',
+        'referer': 'https://tachka.ru/',
+        'sec-ch-ua': '"Chromium";v="106", "Yandex";v="22", "Not;A=Brand";v="99"',
+        'sec-ch-ua-mobile': '?0',
+        'sec-ch-ua-platform': '"Windows"',
+        'sec-fetch-dest': 'document',
+        'sec-fetch-mode': 'navigate',
+        'sec-fetch-site': 'same-origin',
+        'sec-fetch-user': '?1',
+        'upgrade-insecure-requests': '1',
+        'user-agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 YaBrowser/22.11.3.818 Yowser/2.5 Safari/537.36',
     }
 
     r = requests.get(url, headers=headers)  # Response
-    sleep(uniform(3, 6))
+    sleep(uniform(4, 9))
 
     return r.text  # возвращает html код страницы
 
@@ -35,16 +38,6 @@ def get_all_links(url_file):  # тут подтягиваем ссылки дл�
 
     print(links)
     print(f'Количество ссылок для парсинга: {len(links)}')
-    # print(type(links))
-
-    # soup = BeautifulSoup(html, 'html.parser')
-    # tds = soup.find('tbody').find_all('tr', class_='cmc-table-row')
-    # links = []
-    #
-    # for td in tds:
-    #     a = td.find('a').get('href')
-    #     link = 'https://coinmarketcap.com' + a
-    #     links.append(link)
     return links
 
 
@@ -58,7 +51,8 @@ def get_page_data(html):
                 'price': '',
                 'quantity': '',
                 'manufacturer': '',
-                'tech': ''
+                'tech': '',
+                'link': ''
                 }
         return data
 
@@ -113,11 +107,18 @@ def get_page_data(html):
 
             try:
                 tech = product.find("div", {"class": "tech"}).text.strip()
-                # tech = re.sub('\n|\s', '', tech)
                 tech = tech.replace('\n\n\n', '; ')
                 tech = tech.replace('\n', ' - ')
             except:
                 tech = ''
+
+            try:
+                link = product.find('a').get('href')
+                # for link in soup.find_all('a'):
+                # link = product.get('href')
+                # link = product.find('a', {"class": "link"})
+            except:
+                link = 'n'
 
             try:
                 data = {'category': category,
@@ -126,17 +127,11 @@ def get_page_data(html):
                         'price': price,
                         'quantity': quantity,
                         'manufacturer': manufacturer,
-                        'tech': tech
+                        'tech': tech,
+                        'link': link
                         }
             except Exception:
                 continue
-                # data = {'category': '',
-                #         'sku': '',
-                #         'name': '',
-                #         'price': '',
-                #         'quantity': '',
-                #         'manufacturer': ''}
-            # parsed =
 
             try:
                 write_csv(data)
@@ -149,7 +144,8 @@ def get_page_data(html):
                 'price': '',
                 'quantity': '',
                 'manufacturer': '',
-                'tech': ''
+                'tech': '',
+                'link': ''
                 }
 
     # print(data)
@@ -165,8 +161,9 @@ def write_csv(data):
                          data['price'],
                          data['quantity'],
                          data['manufacturer'],
-                         data['tech']))
-        print(data['name'], 'parsed')
+                         data['tech'],
+                         data['link']))
+        print(data['name'], data['link'], 'parsed')
 
 
 def make_all(url):
@@ -175,23 +172,13 @@ def make_all(url):
     data = get_page_data(html)
 
 
-#  write_csv(data)
-
-
 def main():
     start = datetime.now()
 
     url_file = 'links_for_scan.txt'
     all_links = get_all_links(url_file)
-    # print(all_links)
-    # print(type(all_links))
-    # for index, url in enumerate(all_links):
-    #     html = get_html(url)
-    #     data = get_page_data(html)
-    #     write_csv(data)
-    #     print(index)
 
-    with Pool(1) as p:  # Pool(10) - количество выполняемых процессов
+    with Pool(6) as p:  # Pool(10) - количество выполняемых процессов
         p.map(make_all, all_links)
 
     end = datetime.now()
